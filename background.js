@@ -1,11 +1,7 @@
 'user strict';
 
 chrome.browserAction.onClicked.addListener(tab => {
-  chrome.tabs.excuteScript(null, { file: 'content.js' });
+  chrome.tabs.executeScript(null, { file: 'content.js' });
 });
 
-chrome.runtime.onMessage.addListener(function(
-  message,
-  sender,
-  sendResponse
-) {});
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {});

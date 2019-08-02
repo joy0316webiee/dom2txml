@@ -12,10 +12,16 @@
   },
   "browser_action": {
     "default_icon": {
-      "16": "images/logo-32.png"
+      "32": "images/logo-32.png"
     }
   },
-  "permissions": ["activeTab", "storage", "downloads", "declarativeContent"],
+  "permissions": [
+    "https://fonts.googleapis.com/",
+    "activeTab",
+    "storage",
+    "downloads",
+    "declarativeContent"
+  ],
   "web_accessible_resources": [
     "content-min.js",
     "content/content.css",
