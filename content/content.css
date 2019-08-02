@@ -100,9 +100,6 @@
 #dom2txml-downloadsvg {
   background-image: url(../images/download.svg);
 }
-#dom2txml-removesvg {
-  background-image: url(../images/minus-circle.svg);
-}
 #dom2txml-quitsvg {
   background-image: url(../images/power.svg);
 }
@@ -240,6 +237,7 @@
   top: 7px;
   padding: 5px;
   background: url('../images/close.svg') no-repeat;
+  cursor: pointer;
 }
 
 .dom2txml-input {
