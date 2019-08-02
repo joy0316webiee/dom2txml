@@ -5,7 +5,6 @@ chrome.browserAction.onClicked.addListener(tab => {
 });
 
 chrome.runtime.onMessage.addListener(function(message, _, __) {
-  console.log('#####');
   if (message.name === 'download-json') {
     let blob = new Blob([message.data], { type: 'application/json' });
     let url = URL.createObjectURL(blob);
