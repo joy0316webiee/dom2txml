@@ -489,7 +489,6 @@ tXml.getObjectValue = function (deep_object, path_string) {
     while (el.parentElement) {
       parentNode = el.parentElement;
       path = `children[${this.findIndex(parentNode, el)}]${path ? '.' + path : ''}`;
-
       if (parentNode.nodeName.toLowerCase() === 'body') break;
       el = parentNode;
     }
@@ -497,10 +496,10 @@ tXml.getObjectValue = function (deep_object, path_string) {
     return `[1].${path}`;
   },
   findIndex: function(p, el) {
-    const childArray = Array.from(p.childNodes);
+    const childNodes = Array.from(p.childNodes);
 
-    for (let i = 0; i < childArray.length; i++) {
-      if (childArray[i].isSameNode(el)) {
+    for (let i = 0; i < childNodes.length; i++) {
+      if (childNodes[i].isSameNode(el)) {
         return i;
       }
     }
