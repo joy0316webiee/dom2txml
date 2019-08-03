@@ -8,8 +8,13 @@ const getAll = function(selector, scope) {
 };
 
 const propertyGetter = (object, path) => {
-  const getter = new Function('x', 'return x.' + path + ';');
-  return getter(object);
+  try {
+    const getter = new Function('x', 'return x' + path + ';');
+    return getter(object);
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 };
 
 const dom2txml = {
@@ -17,352 +22,342 @@ const dom2txml = {
     hover: true
   },
   init: function() {
-    const scriptText = `
-function tXml(S, options) {
-    "use strict";
-    options = options || {};
+    this.tXml = function tXml(S, options) {
+      'use strict';
+      options = options || {};
 
-    var pos = options.pos || 0;
+      var pos = options.pos || 0;
 
-    var openBracket = "<";
-    var openBracketCC = "<".charCodeAt(0);
-    var closeBracket = ">";
-    var closeBracketCC = ">".charCodeAt(0);
-    var minus = "-";
-    var minusCC = "-".charCodeAt(0);
-    var slash = "/";
-    var slashCC = "/".charCodeAt(0);
-    var exclamation = "!";
-    var exclamationCC = "!".charCodeAt(0);
-    var singleQuote = "'";
-    var singleQuoteCC = "'".charCodeAt(0);
-    var doubleQuote = '"';
-    var doubleQuoteCC = '"'.charCodeAt(0);
+      var openBracket = '<';
+      var openBracketCC = '<'.charCodeAt(0);
+      var closeBracket = '>';
+      var closeBracketCC = '>'.charCodeAt(0);
+      var minus = '-';
+      var minusCC = '-'.charCodeAt(0);
+      var slash = '/';
+      var slashCC = '/'.charCodeAt(0);
+      var exclamation = '!';
+      var exclamationCC = '!'.charCodeAt(0);
+      var singleQuote = "'";
+      var singleQuoteCC = "'".charCodeAt(0);
+      var doubleQuote = '"';
+      var doubleQuoteCC = '"'.charCodeAt(0);
 
-    function parseChildren() {
+      function parseChildren() {
         var children = [];
         while (S[pos]) {
-            if (S.charCodeAt(pos) == openBracketCC) {
-                if (S.charCodeAt(pos + 1) === slashCC) {
-                    pos = S.indexOf(closeBracket, pos);
-                    if (pos + 1) pos += 1;
-                    return children;
-                } else if (S.charCodeAt(pos + 1) === exclamationCC) {
-                    if (S.charCodeAt(pos + 2) == minusCC) {
-                        //comment support
-                        while (
-                            pos !== -1 &&
-                            !(
-                                S.charCodeAt(pos) === closeBracketCC &&
-                                S.charCodeAt(pos - 1) == minusCC &&
-                                S.charCodeAt(pos - 2) == minusCC &&
-                                pos != -1
-                            )
-                        ) {
-                            pos = S.indexOf(closeBracket, pos + 1);
-                        }
-                        if (pos === -1) {
-                            pos = S.length;
-                        }
-                    } else {
-                        // doctypesupport
-                        pos += 2;
-                        while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
-                            pos++;
-                        }
-                    }
-                    pos++;
-                    continue;
+          if (S.charCodeAt(pos) == openBracketCC) {
+            if (S.charCodeAt(pos + 1) === slashCC) {
+              pos = S.indexOf(closeBracket, pos);
+              if (pos + 1) pos += 1;
+              return children;
+            } else if (S.charCodeAt(pos + 1) === exclamationCC) {
+              if (S.charCodeAt(pos + 2) == minusCC) {
+                //comment support
+                while (
+                  pos !== -1 &&
+                  !(
+                    S.charCodeAt(pos) === closeBracketCC &&
+                    S.charCodeAt(pos - 1) == minusCC &&
+                    S.charCodeAt(pos - 2) == minusCC &&
+                    pos != -1
+                  )
+                ) {
+                  pos = S.indexOf(closeBracket, pos + 1);
                 }
-                var node = parseNode();
-                children.push(node);
-            } else {
-                var text = parseText();
-                if (text.trim().length > 0) children.push(text);
-                pos++;
+                if (pos === -1) {
+                  pos = S.length;
+                }
+              } else {
+                // doctypesupport
+                pos += 2;
+                while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
+                  pos++;
+                }
+              }
+              pos++;
+              continue;
             }
+            var node = parseNode();
+            children.push(node);
+          } else {
+            var text = parseText();
+            if (text.trim().length > 0) children.push(text);
+            pos++;
+          }
         }
         return children;
-    }
+      }
 
-
-    function parseText() {
+      function parseText() {
         var start = pos;
         pos = S.indexOf(openBracket, pos) - 1;
         if (pos === -2) pos = S.length;
         return S.slice(start, pos + 1);
-    }
+      }
 
-    var nameSpacer = "\\n\\t>/= ";
+      var nameSpacer = '\n\t>/= ';
 
-    function parseName() {
+      function parseName() {
         var start = pos;
         while (nameSpacer.indexOf(S[pos]) === -1 && S[pos]) {
-            pos++;
+          pos++;
         }
         return S.slice(start, pos);
-    }
+      }
 
-    var NoChildNodes = ["img", "br", "input", "meta", "link"];
+      var NoChildNodes = ['img', 'br', 'input', 'meta', 'link'];
 
-    function parseNode() {
+      function parseNode() {
         var node = {};
         pos++;
         node.tagName = parseName();
         // parsing attributes
         var attrFound = false;
         while (S.charCodeAt(pos) !== closeBracketCC && S[pos]) {
-            var c = S.charCodeAt(pos);
-            if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
-                //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
-                var name = parseName();
-                // search beginning of the string
-                var code = S.charCodeAt(pos);
-                while (
-                    code &&
-                    code !== singleQuoteCC &&
-                    code !== doubleQuoteCC &&
-                    !((code > 64 && code < 91) || (code > 96 && code < 123)) &&
-                    code !== closeBracketCC
-                ) {
-                    pos++;
-                    code = S.charCodeAt(pos);
-                }
-                if (!attrFound) {
-                    node.attributes = {};
-                    attrFound = true;
-                }
-                if (code === singleQuoteCC || code === doubleQuoteCC) {
-                    var value = parseString();
-                    if (pos === -1) {
-                        return node;
-                    }
-                } else {
-                    value = null;
-                    pos--;
-                }
-                node.attributes[name] = value;
+          var c = S.charCodeAt(pos);
+          if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
+            //if('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(S[pos])!==-1 ){
+            var name = parseName();
+            // search beginning of the string
+            var code = S.charCodeAt(pos);
+            while (
+              code &&
+              code !== singleQuoteCC &&
+              code !== doubleQuoteCC &&
+              !((code > 64 && code < 91) || (code > 96 && code < 123)) &&
+              code !== closeBracketCC
+            ) {
+              pos++;
+              code = S.charCodeAt(pos);
             }
-            pos++;
+            if (!attrFound) {
+              node.attributes = {};
+              attrFound = true;
+            }
+            if (code === singleQuoteCC || code === doubleQuoteCC) {
+              var value = parseString();
+              if (pos === -1) {
+                return node;
+              }
+            } else {
+              value = null;
+              pos--;
+            }
+            node.attributes[name] = value;
+          }
+          pos++;
         }
         // optional parsing of children
         if (S.charCodeAt(pos - 1) !== slashCC) {
-            if (node.tagName == "script") {
-                var start = pos + 1;
-                pos = S.indexOf("</" + "script>", pos);
-                node.children = [S.slice(start, pos - 1)];
-                pos += 9;
-            } else if (node.tagName == "style") {
-                var start = pos + 1;
-                pos = S.indexOf("</style>", pos);
-                node.children = [S.slice(start, pos - 1)];
-                pos += 8;
-            } else if (NoChildNodes.indexOf(node.tagName) == -1) {
-                pos++;
-                node.children = parseChildren(name);
-            }
-        } else {
+          if (node.tagName == 'script') {
+            var start = pos + 1;
+            pos = S.indexOf('</' + 'script>', pos);
+            node.children = [S.slice(start, pos - 1)];
+            pos += 9;
+          } else if (node.tagName == 'style') {
+            var start = pos + 1;
+            pos = S.indexOf('</style>', pos);
+            node.children = [S.slice(start, pos - 1)];
+            pos += 8;
+          } else if (NoChildNodes.indexOf(node.tagName) == -1) {
             pos++;
+            node.children = parseChildren(name);
+          }
+        } else {
+          pos++;
         }
         return node;
-    }
+      }
 
-
-    function parseString() {
+      function parseString() {
         var startChar = S[pos];
         var startpos = ++pos;
         pos = S.indexOf(startChar, startpos);
         return S.slice(startpos, pos);
-    }
+      }
 
-    function findElements() {
+      function findElements() {
         var r = new RegExp(
-            "\\\s" + options.attrName + "\\\s*=['\\"]" + options.attrValue + "['\\"]"
+          '\\s' + options.attrName + '\\s*=[\'"]' + options.attrValue + '[\'"]'
         ).exec(S);
         if (r) {
-            return r.index;
+          return r.index;
         } else {
-            return -1;
+          return -1;
         }
-    }
+      }
 
-    var out = null;
-    if (options.attrValue !== undefined) {
-        options.attrName = options.attrName || "id";
+      var out = null;
+      if (options.attrValue !== undefined) {
+        options.attrName = options.attrName || 'id';
         var out = [];
 
         while ((pos = findElements()) !== -1) {
-            pos = S.lastIndexOf("<", pos);
-            if (pos !== -1) {
-                out.push(parseNode());
-            }
-            S = S.substr(pos);
-            pos = 0;
+          pos = S.lastIndexOf('<', pos);
+          if (pos !== -1) {
+            out.push(parseNode());
+          }
+          S = S.substr(pos);
+          pos = 0;
         }
-    } else if (options.parseNode) {
+      } else if (options.parseNode) {
         out = parseNode();
-    } else {
+      } else {
         out = parseChildren();
-    }
+      }
 
-    if (options.filter) {
+      if (options.filter) {
         out = tXml.filter(out, options.filter);
-    }
+      }
 
-    if (options.simplify) {
+      if (options.simplify) {
         out = tXml.simplify(out);
-    }
-    out.pos = pos;
-    return out;
-}
-tXml.simplify = function simplify(children) {
-    var out = {};
-    if (!children.length) {
-        return "";
-    }
+      }
+      out.pos = pos;
+      return out;
+    };
+    this.tXml.simplify = function simplify(children) {
+      var out = {};
+      if (!children.length) {
+        return '';
+      }
 
-    if (children.length === 1 && typeof children[0] == "string") {
+      if (children.length === 1 && typeof children[0] == 'string') {
         return children[0];
-    }
-    // map each object
-    children.forEach(function (child) {
-        if (typeof child !== "object") {
-            return;
+      }
+      // map each object
+      children.forEach(function(child) {
+        if (typeof child !== 'object') {
+          return;
         }
         if (!out[child.tagName]) out[child.tagName] = [];
-        var kids = tXml.simplify(child.children || []);
+        var kids = this.tXml.simplify(child.children || []);
         out[child.tagName].push(kids);
         if (child.attributes) {
-            kids._attributes = child.attributes;
+          kids._attributes = child.attributes;
         }
-    });
+      });
 
-    for (var i in out) {
+      for (var i in out) {
         if (out[i].length == 1) {
-            out[i] = out[i][0];
+          out[i] = out[i][0];
         }
-    }
+      }
 
-    return out;
-};
+      return out;
+    };
 
-tXml.filter = function (children, f) {
-    var out = [];
-    children.forEach(function (child) {
-        if (typeof child === "object" && f(child)) out.push(child);
+    this.tXml.filter = function(children, f) {
+      var out = [];
+      children.forEach(function(child) {
+        if (typeof child === 'object' && f(child)) out.push(child);
         if (child.children) {
-            var kids = tXml.filter(child.children, f);
-            out = out.concat(kids);
+          var kids = this.tXml.filter(child.children, f);
+          out = out.concat(kids);
         }
-    });
-    return out;
-};
+      });
+      return out;
+    };
 
-tXml.stringify = function TOMObjToXML(O) {
-    var out = "";
+    this.tXml.stringify = function TOMObjToXML(O) {
+      var out = '';
 
-    function writeChildren(O) {
+      function writeChildren(O) {
         if (O)
-            for (var i = 0; i < O.length; i++) {
-                if (typeof O[i] == "string") {
-                    out += O[i].trim();
-                } else {
-                    writeNode(O[i]);
-                }
-            }
-    }
-
-    function writeNode(N) {
-        out += "<" + N.tagName;
-        for (var i in N.attributes) {
-            if (N.attributes[i] === null) {
-                out += " " + i;
-            } else if (N.attributes[i].indexOf('"') === -1) {
-                out += " " + i + '="' + N.attributes[i].trim() + '"';
+          for (var i = 0; i < O.length; i++) {
+            if (typeof O[i] == 'string') {
+              out += O[i].trim();
             } else {
-                out += " " + i + "='" + N.attributes[i].trim() + "'";
+              writeNode(O[i]);
             }
+          }
+      }
+
+      function writeNode(N) {
+        out += '<' + N.tagName;
+        for (var i in N.attributes) {
+          if (N.attributes[i] === null) {
+            out += ' ' + i;
+          } else if (N.attributes[i].indexOf('"') === -1) {
+            out += ' ' + i + '="' + N.attributes[i].trim() + '"';
+          } else {
+            out += ' ' + i + "='" + N.attributes[i].trim() + "'";
+          }
         }
-        out += ">";
+        out += '>';
         writeChildren(N.children);
-        out += "</" + N.tagName + ">";
-    }
-    writeChildren(O);
+        out += '</' + N.tagName + '>';
+      }
+      writeChildren(O);
 
-    return out;
-};
+      return out;
+    };
 
-tXml.toContentString = function (tDom) {
-    if (Array.isArray(tDom)) {
-        var out = "";
-        tDom.forEach(function (e) {
-            out += " " + tXml.toContentString(e);
-            out = out.trim();
+    this.tXml.toContentString = function(tDom) {
+      if (Array.isArray(tDom)) {
+        var out = '';
+        tDom.forEach(function(e) {
+          out += ' ' + this.tXml.toContentString(e);
+          out = out.trim();
         });
         return out;
-    } else if (typeof tDom === "object") {
-        return tXml.toContentString(tDom.children);
-    } else {
-        return " " + tDom;
-    }
-};
+      } else if (typeof tDom === 'object') {
+        return this.tXml.toContentString(tDom.children);
+      } else {
+        return ' ' + tDom;
+      }
+    };
 
-tXml.getElementsById = function (S, id, simplified) {
-    try {
-        var out = tXml(S, {
-            attrValue: id,
-            simplify: simplified
+    this.tXml.getElementsById = function(S, id, simplified) {
+      try {
+        var out = this.tXml(S, {
+          attrValue: id,
+          simplify: simplified
         });
         return simplified ? out : out[0];
-    } catch (e) {
+      } catch (e) {
         console.error(e);
         return null;
-    }
-};
+      }
+    };
 
-tXml.getElementsByClassName = function (S, classname, simplified) {
-    try {
-        return tXml(S, {
-            attrName: "class",
-            attrValue: "[a-zA-Z0-9-s ]*" + classname + "[a-zA-Z0-9-s ]*",
-            simplify: simplified
+    this.tXml.getElementsByClassName = function(S, classname, simplified) {
+      try {
+        return this.tXml(S, {
+          attrName: 'class',
+          attrValue: '[a-zA-Z0-9-s ]*' + classname + '[a-zA-Z0-9-s ]*',
+          simplify: simplified
         });
-    } catch (e) {
+      } catch (e) {
         console.error(e);
         return null;
-    }
-};
+      }
+    };
 
-// NOTE: Added
-tXml.getElementsByAttribute = function (S, attr_name, attr_value, simplified) {
-    try {
-        return tXml(S, {
-            attrName: attr_name,
-            attrValue: "[a-zA-Z0-9-s ]*" + attr_value + "[a-zA-Z0-9-s ]*",
-            simplify: simplified
+    // NOTE: Added
+    this.tXml.getElementsByAttribute = function(S, attr_name, attr_value, simplified) {
+      try {
+        return this.tXml(S, {
+          attrName: attr_name,
+          attrValue: '[a-zA-Z0-9-s ]*' + attr_value + '[a-zA-Z0-9-s ]*',
+          simplify: simplified
         });
-    } catch (e) {
+      } catch (e) {
         console.error(e);
         return null;
-    }
-};
+      }
+    };
 
-// NOTE: Added
-tXml.getObjectValue = function (deep_object, path_string) {
-    try {
-        var accessor = new Function("object", "return object."+path_string+";");
+    // NOTE: Added
+    this.tXml.getObjectValue = function(deep_object, path_string) {
+      try {
+        var accessor = new Function('object', 'return object.' + path_string + ';');
         return accessor(deep_object, path_string) || null;
-    } catch (e) {
+      } catch (e) {
         return null;
-    }
-};
-`;
-
-    const b = new Blob([scriptText], { type: 'text/javascript' });
-    const u = URL.createObjectURL(b);
-    const s = document.createElement('script');
-    s.src = u;
-    get('head').appendChild(s);
+      }
+    };
     // load css to generated background.html
     get('head').insertAdjacentHTML(
       'beforeEnd',
@@ -475,7 +470,6 @@ tXml.getObjectValue = function (deep_object, path_string) {
     get(`#dom2txml-column-${uid}`).remove();
   },
   saveSelection: function(id) {
-    // TODO: add converting functionality
     let html = '';
     getAll('.dom2txml-tag').forEach(tag => {
       html += `<p class="dom2txml-ext dom2txml-selectiontags">${this.createTxmlPath(
@@ -488,32 +482,40 @@ tXml.getObjectValue = function (deep_object, path_string) {
     let path = '';
     while (el.parentElement) {
       parentNode = el.parentElement;
-      path = `children[${this.findIndex(parentNode, el)}]${path ? '.' + path : ''}`;
+      if (!parentNode.classList.contains('dom2txml-tag')) {
+        path = `children[${this.findIndex(parentNode, el)}]${path ? '.' + path : ''}`;
+      }
       if (parentNode.nodeName.toLowerCase() === 'body') break;
       el = parentNode;
     }
-
     return `[1].${path}`;
   },
   findIndex: function(p, el) {
-    const childNodes = Array.from(p.childNodes);
+    let children = Array.from(p.children);
+    let discount = 0;
 
-    for (let i = 0; i < childNodes.length; i++) {
-      if (childNodes[i].isSameNode(el)) {
-        return i;
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains('dom2txml-close')) {
+        discount++;
+        continue;
+      }
+
+      if (children[i].isSameNode(el)) {
+        return i - discount;
       }
     }
     throw new Error("can't find element index");
   },
   testTxmlPath(result) {
-    // const parsed = new tXml(document.documentElement.innerHTML);
+    const parsed = new this.tXml(document.documentElement.innerHTML);
+    console.log(parsed);
     for (const selection of result.data) {
       for (const key in selection) {
-        if (object.hasOwnProperty(key)) {
-          console.log(key, object[key]);
-          // if (!propertyGetter(parsed, selection[key])) {
-          //   throw new Error(`tXml path for ${key} isn't correct!!`);
-          // }
+        if (selection.hasOwnProperty(key)) {
+          console.log(key, selection[key]);
+          if (!propertyGetter(parsed, selection[key])) {
+            throw new Error(`tXml path for ${key} isn't correct!!`);
+          }
         }
       }
     }
@@ -521,7 +523,7 @@ tXml.getObjectValue = function (deep_object, path_string) {
   generateJSON: function() {
     const result = this.grepJSONData();
     const fileName = this.getProjectName();
-    // this.testTxmlPath(result);
+    this.testTxmlPath(result);
     chrome.runtime.sendMessage({
       name: 'download-json',
       data: JSON.stringify(result),
@@ -558,6 +560,7 @@ tXml.getObjectValue = function (deep_object, path_string) {
   generateCSV: function() {
     // no column id for csv
     const result = this.grepCSVData();
+    this.testTxmlPath(result);
     const fileName = this.getProjectName();
     chrome.runtime.sendMessage({
       name: 'download-csv',
